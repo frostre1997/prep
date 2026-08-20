@@ -117,4 +117,4 @@ Contributions are welcome! Please open an issue or pull request on GitHub. For m
 
 ## License
 
-This project is licensed under the MIT License – see the LICENSE file for details.
+This project is licensed under the MIT License – see the [LICENSE](https://github.com/frostre1997/prep/blob/master/LICENSE) file for details.
