@@ -43,31 +43,31 @@ Download the latest binary for your platform from the Releases page.
 
 ## Basic commands
 
-- prep audit - Scan all files for issues (default).
+- **prep audit** - Scan all files for issues (default).
 
-- prep audit -r - Scan only files changed in the last commit.
+- **prep audit -r** - Scan only files changed in the last commit.
 
-- prep fix - Auto-fix formatting issues.
+- **prep fix** - Auto-fix formatting issues.
 
-- prep fix --dry-run - Show what would be fixed without changing files.
+- **prep fix --dry-run** - Show what would be fixed without changing files.
 
-- prep build - Parse build output from stdin (pipe).
+- **prep build* - Parse build output from stdin (pipe).
 
-- prep build --run - Run the build and parse output (supports gradle, maven, cargo).
+- **prep build --run** - Run the build and parse output (supports gradle, maven, cargo).
 
-- prep search "pattern" - Search for a regex pattern.
+- **prep search "pattern"** - Search for a regex pattern.
 
-- prep search -i "pattern" - Case-insensitive search.
+- **prep search -i "pattern"** - Case-insensitive search.
 
-- prep manifest - Generate SHA-256 manifest of all text files.
+- **prep manifest** - Generate SHA-256 manifest of all text files.
 
-- prep report --format html - Generate an HTML report.
+- **prep report --format html** - Generate an HTML report.
 
-- prep hooks install - Install a pre-commit hook.
+- **prep hooks install** - Install a pre-commit hook.
 
-- prep blame - Show git blame for each issue.
+- **prep blame** - Show git blame for each issue.
 
-- prep info - Show repository information.
+- **prep info** - Show repository information.
 
 ## Examples
 
