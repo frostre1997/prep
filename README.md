@@ -18,6 +18,18 @@
 - Parallel scanning for speed
 - CI-friendly exit codes and output
 
+## Demo
+
+Here's a quick demonstration of `prep` in action:
+
+![prep demo](./video/demo.gif)
+
+The demo shows:
+- `prep --version` – check the version
+- `prep audit` – scan the repository for issues
+- `prep search "fn main"` – find matches using regex
+- `prep fix --dry-run` – preview fixes without making changes
+
 ## Installation
 
 ### From source (requires Rust)
