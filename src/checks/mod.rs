@@ -2,8 +2,8 @@
 use anyhow::Result;
 use regex::Regex;
 use std::fs;
-use std::path::Path;
 use std::io::Read;
+use std::path::Path;
 
 #[derive(Debug, Clone)]
 pub enum Severity {
@@ -25,7 +25,6 @@ pub struct CheckResult {
 pub fn run_checks_on_file(path: &Path) -> Vec<CheckResult> {
     let mut results = Vec::new();
 
-    // Skip binary files
     if is_binary(path) {
         return results;
     }
@@ -137,8 +136,8 @@ pub fn fix_file(
     let content = fs::read_to_string(path)?;
     let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
 
-    // Default: fix trailing whitespace and EOF
-    let fix_trim = trim || !all; // if all is false, we still fix whitespace by default
+    // Default: fix trailing whitespace and EOF if not overriding
+    let fix_trim = trim || !all;
     let fix_eof = eof || !all;
     let fix_crlf = crlf || all;
     let fix_bom = bom || all;
@@ -196,18 +195,17 @@ pub fn fix_file(
 
     // 4. Remove BOM
     if fix_bom {
-        let mut content = fs::read(path)?;
-        if content.starts_with(&[0xEF, 0xBB, 0xBF]) {
-            content.drain(0..3);
+        let mut content_bytes = fs::read(path)?;
+        if content_bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
+            content_bytes.drain(0..3);
             if !dry_run {
-                fs::write(path, content)?;
+                fs::write(path, content_bytes)?;
             }
             fixed = true;
             issues.push(CheckResult {
                 severity: Severity::Info,
                 message: "Removed UTF-8 BOM".to_string(),
             });
-            // Since we already wrote, we need to avoid rewriting again
             return Ok((fixed, issues));
         }
     }
