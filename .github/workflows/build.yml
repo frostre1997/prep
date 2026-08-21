@@ -1,0 +1,102 @@
+name: rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [stable, nightly]
+        include:
+          - rust: stable
+            coverage: true
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+        components: rustfmt, clippy
+
+    - name: Cache cargo registry and target
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-${{ matrix.rust }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.rust }}-cargo-
+
+    - name: Install sccache (faster builds)
+      run: cargo install sccache --version 0.8.2
+      if: matrix.rust == 'stable'
+      continue-on-error: true
+
+    - name: Set sccache environment
+      run: echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+      if: matrix.rust == 'stable'
+
+    - name: Check formatting (stable only)
+      if: matrix.rust == 'stable'
+      run: cargo fmt -- --check
+
+    - name: Lint with clippy (stable only)
+      if: matrix.rust == 'stable'
+      run: cargo clippy -- -D warnings
+
+    - name: Build (release)
+      run: cargo build --release --verbose
+
+    - name: Run tests
+      run: cargo test --verbose
+
+    - name: Run tests with no default features (stable only)
+      if: matrix.rust == 'stable'
+      run: cargo test --no-default-features --verbose
+
+    - name: Run cargo audit (stable only)
+      if: matrix.rust == 'stable'
+      run: |
+        cargo install cargo-audit
+        cargo audit
+
+    - name: Install cargo-llvm-cov for coverage (stable only)
+      if: matrix.coverage == true
+      run: cargo install cargo-llvm-cov
+
+    - name: Generate coverage report (stable only)
+      if: matrix.coverage == true
+      run: cargo llvm-cov --workspace --lcov --output-path lcov.info
+
+    - name: Upload coverage to Codecov (stable only, master only)
+      if: matrix.coverage == true && github.ref == 'refs/heads/master'
+      uses: codecov/codecov-action@v4
+      with:
+        file: lcov.info
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: false
+
+    - name: Show sccache stats (stable only)
+      if: matrix.rust == 'stable'
+      run: sccache --show-stats
+      continue-on-error: true
+
+    - name: Upload binary (stable only)
+      if: matrix.rust == 'stable'
+      uses: actions/upload-artifact@v4
+      with:
+        name: prep-linux
+        path: target/release/prep
