@@ -1,4 +1,4 @@
-name: Rust
+name: rust
 
 on:
   push:
@@ -42,7 +42,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-${{ matrix.rust }}-cargo-
 
-    - name: Install sccache (for faster builds)
+    - name: Install sccache (faster builds)
       run: cargo install sccache --version 0.8.2
       if: matrix.rust == 'stable'
       continue-on-error: true
@@ -72,7 +72,6 @@ jobs:
     - name: Check minimal supported Rust version (MSRV)
       if: matrix.msrv == true
       run: |
-        # Set MSRV to 1.70.0 (adjust as needed)
         rustup toolchain install 1.74.0
         cargo +1.74.0 build --verbose
 
@@ -88,14 +87,16 @@ jobs:
         cargo install cargo-outdated
         cargo outdated --exit-code 1
 
+    - name: Install cargo-llvm-cov for coverage
+      if: matrix.coverage == true
+      run: cargo install cargo-llvm-cov
+
     - name: Generate coverage report
       if: matrix.coverage == true
-      run: |
-        cargo install cargo-llvm-cov
-        cargo llvm-cov --workspace --lcov --output-path lcov.info
+      run: cargo llvm-cov --workspace --lcov --output-path lcov.info
 
     - name: Upload coverage to Codecov
-      if: matrix.coverage == true && github.repository == 'frostre1997/prep'
+      if: matrix.coverage == true
       uses: codecov/codecov-action@v4
       with:
         file: lcov.info
