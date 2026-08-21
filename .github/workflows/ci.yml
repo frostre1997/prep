@@ -19,24 +19,31 @@ jobs:
         rust: [stable, beta]
     steps:
     - uses: actions/checkout@v4
-    - uses: actions-rs/toolchain@v1
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.rust }}
-        override: true
         components: rustfmt, clippy
-    - uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: ${{ runner.os }}-${{ matrix.rust }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-    - run: cargo fmt -- --check
-    - run: cargo clippy -- -D warnings
-    - run: cargo build --release --verbose
-    - run: cargo test --verbose
-    - uses: actions/upload-artifact@v4
+
+    - name: Cache cargo registry
+      uses: Swatinem/rust-cache@v2
+
+    - name: Check formatting
+      run: cargo fmt -- --check
+
+    - name: Lint with clippy
+      run: cargo clippy -- -D warnings
+
+    - name: Build (release)
+      run: cargo build --release --verbose
+
+    - name: Run tests
+      run: cargo test --verbose
+
+    - name: Upload binary (Linux)
       if: matrix.rust == 'stable'
+      uses: actions/upload-artifact@v4
       with:
         name: prep-${{ runner.os }}
         path: target/release/prep
@@ -47,14 +54,18 @@ jobs:
     needs: build
     steps:
     - uses: actions/checkout@v4
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
-    - run: cargo build --release
-    - run: target/release/prep audit --verbose
-    - run: target/release/prep fix --dry-run
-    - run: target/release/prep manifest --out manifest.txt
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache cargo registry
+      uses: Swatinem/rust-cache@v2
+    - name: Build prep
+      run: cargo build --release
+    - name: Run prep audit on itself
+      run: target/release/prep audit --verbose
+    - name: Run prep fix --dry-run
+      run: target/release/prep fix --dry-run
+    - name: Generate manifest
+      run: target/release/prep manifest --out manifest.txt
     - uses: actions/upload-artifact@v4
       with:
         name: manifest
@@ -66,12 +77,14 @@ jobs:
     needs: self-audit
     steps:
     - uses: actions/checkout@v4
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
-    - run: cargo build --release
-    - run: target/release/prep report --format html --output report.html --all
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache cargo registry
+      uses: Swatinem/rust-cache@v2
+    - name: Build prep
+      run: cargo build --release
+    - name: Generate HTML report
+      run: target/release/prep report --format html --output report.html --all
     - uses: actions/upload-artifact@v4
       with:
         name: prep-report
@@ -84,10 +97,10 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
     - uses: actions/checkout@v4
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+    - name: Cache cargo registry
+      uses: Swatinem/rust-cache@v2
     - run: |
         rustup target add x86_64-unknown-linux-gnu
         rustup target add x86_64-apple-darwin
@@ -103,7 +116,7 @@ jobs:
         cd release && tar -czf prep-linux.tar.gz prep-linux
         cd release && tar -czf prep-macos.tar.gz prep-macos
         cd release && zip prep-windows.zip prep-windows.exe
-    - uses: softprops/action-gh-release@v1
+    - uses: softprops/action-gh-release@v2
       with:
         files: |
           release/prep-linux.tar.gz
