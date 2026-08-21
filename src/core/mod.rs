@@ -1,7 +1,7 @@
 // src/core/mod.rs
 #![allow(clippy::too_many_arguments)]
 
-use crate::checks::{fix_file, run_checks_on_file, CheckResult, is_binary};
+use crate::checks::{fix_file, is_binary, run_checks_on_file, CheckResult};
 use anyhow::Result;
 use colored::*;
 use ignore::WalkBuilder;
@@ -346,8 +346,8 @@ pub fn repo_info(detailed: bool) -> Result<()> {
 }
 
 pub fn watch_files(interval: Option<u64>, fix: bool) -> Result<()> {
-    use std::time::Duration;
     use std::thread;
+    use std::time::Duration;
 
     let interval = interval.unwrap_or(5);
     println!("Watching for changes (interval: {}s)...", interval);
@@ -416,7 +416,10 @@ pub fn show_version(check: bool) -> Result<()> {
     if check {
         println!("Checking for updates...");
         let output = std::process::Command::new("curl")
-            .args(["-s", "https://api.github.com/repos/frostre1997/prep/releases/latest"])
+            .args([
+                "-s",
+                "https://api.github.com/repos/frostre1997/prep/releases/latest",
+            ])
             .output();
         if let Ok(out) = output {
             let stdout = String::from_utf8_lossy(&out.stdout);

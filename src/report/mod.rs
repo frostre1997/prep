@@ -1,5 +1,5 @@
 use anyhow::Result;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::fs;
 use std::process::Command;
@@ -125,7 +125,10 @@ pub fn import_issues(file: &str) -> Result<()> {
     println!("Importing issues from {} (not yet fully implemented)", file);
     let content = fs::read_to_string(file)?;
     if let Ok(data) = serde_json::from_str::<serde_json::Value>(&content) {
-        println!("Imported {} issues", data.as_array().map(|a| a.len()).unwrap_or(0));
+        println!(
+            "Imported {} issues",
+            data.as_array().map(|a| a.len()).unwrap_or(0)
+        );
     } else {
         println!("Failed to parse JSON. Only JSON import is supported.");
     }
@@ -142,7 +145,19 @@ fn collect_files_for_report() -> Result<Vec<std::path::PathBuf>> {
     {
         let entry = entry?;
         let path = entry.path();
-        if path.is_file() && path.extension().map(|e| e != "png" && e != "jpg" && e != "jpeg" && e != "gif" && e != "ico" && e != "bin").unwrap_or(true) {
+        if path.is_file()
+            && path
+                .extension()
+                .map(|e| {
+                    e != "png"
+                        && e != "jpg"
+                        && e != "jpeg"
+                        && e != "gif"
+                        && e != "ico"
+                        && e != "bin"
+                })
+                .unwrap_or(true)
+        {
             files.push(path.to_path_buf());
         }
     }
@@ -205,7 +220,10 @@ fn generate_html_report(issues: &[Issue]) -> String {
         html.push_str(&format!(
             "<tr><td>{}</td><td>{}</td><td class='severity {}'>{}</td><td>{}</td></tr>",
             issue.file,
-            issue.line.map(|l| l.to_string()).unwrap_or_else(|| "-".to_string()),
+            issue
+                .line
+                .map(|l| l.to_string())
+                .unwrap_or_else(|| "-".to_string()),
             sev_class,
             sev_class.to_uppercase(),
             issue.message
@@ -233,7 +251,10 @@ fn generate_markdown_report(issues: &[Issue]) -> String {
         md.push_str(&format!(
             "| {} | {} | {} | {} |\n",
             issue.file,
-            issue.line.map(|l| l.to_string()).unwrap_or_else(|| "-".to_string()),
+            issue
+                .line
+                .map(|l| l.to_string())
+                .unwrap_or_else(|| "-".to_string()),
             issue.severity.to_uppercase(),
             issue.message
         ));
@@ -248,7 +269,10 @@ fn generate_csv_report(issues: &[Issue]) -> String {
         csv.push_str(&format!(
             "{},{},{},{}\n",
             issue.file,
-            issue.line.map(|l| l.to_string()).unwrap_or_else(|| "-".to_string()),
+            issue
+                .line
+                .map(|l| l.to_string())
+                .unwrap_or_else(|| "-".to_string()),
             issue.severity,
             issue.message
         ));
