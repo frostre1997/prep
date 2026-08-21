@@ -2,10 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main, master ]
     tags: [ v* ]
   pull_request:
-    branches: [ master ]
+    branches: [ main, master ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -19,28 +19,21 @@ jobs:
         rust: [stable, beta]
     steps:
     - uses: actions/checkout@v4
-
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.rust }}
         components: rustfmt, clippy
-
     - name: Cache cargo registry
       uses: Swatinem/rust-cache@v2
-
     - name: Check formatting
       run: cargo fmt -- --check
-
     - name: Lint with clippy
       run: cargo clippy -- -D warnings
-
     - name: Build (release)
       run: cargo build --release --verbose
-
     - name: Run tests
       run: cargo test --verbose
-
     - name: Upload binary (Linux)
       if: matrix.rust == 'stable'
       uses: actions/upload-artifact@v4
@@ -101,27 +94,23 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
     - name: Cache cargo registry
       uses: Swatinem/rust-cache@v2
-    - run: |
-        rustup target add x86_64-unknown-linux-gnu
-        rustup target add x86_64-apple-darwin
-        rustup target add x86_64-pc-windows-gnu
-        cargo build --release --target x86_64-unknown-linux-gnu
-        cargo build --release --target x86_64-apple-darwin
-        cargo build --release --target x86_64-pc-windows-gnu
-    - run: |
-        mkdir -p release
-        cp target/x86_64-unknown-linux-gnu/release/prep release/prep-linux
-        cp target/x86_64-apple-darwin/release/prep release/prep-macos
-        cp target/x86_64-pc-windows-gnu/release/prep.exe release/prep-windows.exe
-        cd release && tar -czf prep-linux.tar.gz prep-linux
-        cd release && tar -czf prep-macos.tar.gz prep-macos
-        cd release && zip prep-windows.zip prep-windows.exe
-    - uses: softprops/action-gh-release@v2
+    - name: Install cross
+      run: cargo install cross
+    - name: Build and upload binaries
+      uses: taiki-e/upload-rust-binary-action@v1
       with:
-        files: |
-          release/prep-linux.tar.gz
-          release/prep-macos.tar.gz
-          release/prep-windows.zip
-          report.html
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        bin: prep
+        target: |
+          x86_64-unknown-linux-gnu
+          i686-unknown-linux-gnu
+          aarch64-unknown-linux-gnu
+          armv7-unknown-linux-gnueabihf
+          arm-unknown-linux-gnueabihf
+          x86_64-pc-windows-gnu
+          i686-pc-windows-gnu
+          x86_64-apple-darwin
+          aarch64-apple-darwin
+        build-tool: cross
+        archive: $bin-$target
+        include: README.md, LICENSE
+        token: ${{ secrets.GITHUB_TOKEN }}
