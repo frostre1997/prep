@@ -72,8 +72,8 @@ jobs:
     - name: Check minimal supported Rust version (MSRV)
       if: matrix.msrv == true
       run: |
-        rustup toolchain install 1.76.0
-        cargo +1.76.0 build --verbose
+        rustup toolchain install 1.93.0
+        cargo +1.93.0 build --verbose
 
     - name: Run cargo audit (security vulnerabilities)
       if: matrix.rust == 'stable'
