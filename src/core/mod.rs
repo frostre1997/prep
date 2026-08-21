@@ -1,13 +1,14 @@
 // src/core/mod.rs
+use crate::checks::{fix_file, run_checks_on_file, CheckResult};
 use anyhow::Result;
 use colored::*;
 use ignore::WalkBuilder;
+use indicatif::{ProgressBar, ProgressStyle};
+use rayon::prelude::*;
 use regex::Regex;
 use std::fs;
-use std::path::{Path, PathBuf};
-use rayon::prelude::*;
-use indicatif::{ProgressBar, ProgressStyle};
-use crate::checks::{CheckResult, run_checks_on_file, fix_file};
+use std::path::PathBuf;
+use std::sync::Arc;
 
 pub fn audit(
     changed: bool,
@@ -20,7 +21,14 @@ pub fn audit(
     _until: Option<&str>,
     no_ignore: bool,
 ) -> Result<()> {
-    let files = collect_files(changed, exclude, include, follow_symlinks, max_depth, no_ignore)?;
+    let files = collect_files(
+        changed,
+        exclude,
+        include,
+        follow_symlinks,
+        max_depth,
+        no_ignore,
+    )?;
 
     if files.is_empty() {
         println!("No files to scan.");
@@ -30,10 +38,14 @@ pub fn audit(
     println!("Scanning {} files...", files.len());
 
     let pb = ProgressBar::new(files.len() as u64);
-    pb.set_style(ProgressStyle::default_bar()
-        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})")
-        .unwrap()
-        .progress_chars("#>-"));
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template(
+                "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})",
+            )
+            .unwrap()
+            .progress_chars("#>-"),
+    );
 
     let results: Vec<(PathBuf, Vec<CheckResult>)> = files
         .par_iter()
@@ -73,7 +85,10 @@ pub fn audit(
         }
     }
 
-    println!("\nDone. Errors: {}, Warnings: {}", total_errors, total_warnings);
+    println!(
+        "\nDone. Errors: {}, Warnings: {}",
+        total_errors, total_warnings
+    );
     Ok(())
 }
 
@@ -127,9 +142,9 @@ pub fn search(
     count: bool,
     files_only: bool,
     line_numbers: bool,
-    after: Option<usize>,
-    before: Option<usize>,
-    context: Option<usize>,
+    _after: Option<usize>,
+    _before: Option<usize>,
+    _context: Option<usize>,
     _full_context: bool,
     _replace: Option<&str>,
     changed: bool,
@@ -192,6 +207,50 @@ pub fn search(
 }
 
 // ------------------------------------------------------------------------
+// Stubs for missing commands
+// ------------------------------------------------------------------------
+
+pub fn manifest(_verify: bool, _out: Option<&str>) -> Result<()> {
+    println!("Manifest command (not yet implemented)");
+    Ok(())
+}
+
+pub fn ci_mode(_fail_on_warning: bool, _threshold: Option<usize>) -> Result<()> {
+    println!("CI mode (not yet implemented)");
+    Ok(())
+}
+
+pub fn repo_info(_detailed: bool) -> Result<()> {
+    println!("Repository info (not yet implemented)");
+    Ok(())
+}
+
+pub fn watch_files(_interval: Option<u64>, _fix: bool) -> Result<()> {
+    println!("Watch command (not yet implemented)");
+    Ok(())
+}
+
+pub fn trim_whitespace(_dry_run: bool) -> Result<()> {
+    println!("Trim command (not yet implemented)");
+    Ok(())
+}
+
+pub fn show_version(_check: bool) -> Result<()> {
+    println!("prep version 0.100.0");
+    if _check {
+        println!("Checking for updates... (not yet implemented)");
+    }
+    Ok(())
+}
+
+pub fn show_examples() -> Result<()> {
+    println!(
+        "Examples:\n  prep audit\n  prep fix --dry-run\n  prep search 'TODO'\n  prep build < build.log\n  prep report --format html\n  prep hooks install"
+    );
+    Ok(())
+}
+
+// ------------------------------------------------------------------------
 // Helper: collect files
 // ------------------------------------------------------------------------
 
@@ -216,7 +275,7 @@ fn collect_files(
     }
     builder.follow_links(follow_symlinks);
     if let Some(depth) = max_depth {
-        builder.max_depth(depth);
+        builder.max_depth(Some(depth));
     }
 
     // Exclude/Include patterns (simplified: glob)
