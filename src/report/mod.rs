@@ -32,16 +32,16 @@ pub fn generate_report(
         _ => generate_html_report(&issues),
     };
 
-    fs::write(&out, content)?;
+    fs::write(out, content)?;
     println!("Report saved to {}", out);
 
     if open {
         if cfg!(target_os = "linux") || cfg!(target_os = "android") {
-            Command::new("xdg-open").arg(&out).output()?;
+            Command::new("xdg-open").arg(out).output()?;
         } else if cfg!(target_os = "macos") {
-            Command::new("open").arg(&out).output()?;
+            Command::new("open").arg(out).output()?;
         } else if cfg!(target_os = "windows") {
-            Command::new("start").arg(&out).output()?;
+            Command::new("start").arg(out).output()?;
         }
     }
 
@@ -116,7 +116,7 @@ pub fn export_issues(format: Option<&str>, output: Option<&str>) -> Result<()> {
         _ => generate_csv_report(&issues),
     };
 
-    fs::write(&out, content)?;
+    fs::write(out, content)?;
     println!("Exported issues to {}", out);
     Ok(())
 }
