@@ -1,0 +1,4 @@
+File,Line,Severity,Message
+./manifest.txt,-,warning,No newline at end of file
+./report.html,-,warning,No newline at end of file
+./report.json,-,warning,No newline at end of file

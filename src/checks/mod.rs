@@ -245,7 +245,7 @@ pub fn find_duplicates(_delete: bool, _move_to_trash: bool) -> Result<()> {
 // Helper: check if file is binary (by looking for null bytes)
 // ------------------------------------------------------------------------
 
-fn is_binary(path: &Path) -> bool {
+pub fn is_binary(path: &Path) -> bool {
     if let Ok(mut file) = fs::File::open(path) {
         let mut buffer = [0; 8192];
         if let Ok(n) = file.read(&mut buffer) {

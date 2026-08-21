@@ -1,0 +1,5 @@
+# prep configuration
+# Add custom rules here
+[rules]
+"TODO: fix" = "warning"
+"console.log" = "warning"

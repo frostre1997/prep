@@ -1,0 +1,7 @@
+# .prepignore
+*.log
+*.tmp
+*.cache
+node_modules/
+target/
+build/
