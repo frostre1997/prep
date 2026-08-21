@@ -1,11 +1,11 @@
-name: CI
+name: CI/Release
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ master ]
     tags: [ v* ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ master ]
 
 env:
   CARGO_TERM_COLOR: always
