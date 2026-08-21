@@ -1,0 +1,23 @@
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# Generated reports
+*.html
+*.json
+*.csv
+*.md
+manifest.txt
+export.json
+
+# Cache
+.prep-cache/
+*.tmp
+*.log
+*.cache
+
+# Editor files
+*.swp
+*.swo
+*~
