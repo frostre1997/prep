@@ -5,7 +5,6 @@ use ignore::WalkBuilder;
 use regex::Regex;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use rayon::prelude::*;
 use indicatif::{ProgressBar, ProgressStyle};
 use crate::checks::{CheckResult, run_checks_on_file, fix_file};
@@ -33,6 +32,7 @@ pub fn audit(
     let pb = ProgressBar::new(files.len() as u64);
     pb.set_style(ProgressStyle::default_bar()
         .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})")
+        .unwrap()
         .progress_chars("#>-"));
 
     let results: Vec<(PathBuf, Vec<CheckResult>)> = files
@@ -239,7 +239,6 @@ fn collect_files(
                     continue;
                 }
             }
-            // Skip binary files (simple check – we'll handle at check stage)
             files.push(path.to_path_buf());
         }
     }
