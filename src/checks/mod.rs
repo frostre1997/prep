@@ -46,7 +46,10 @@ pub fn run_checks_on_file(path: &Path) -> Vec<CheckResult> {
     let secret_patterns = [
         (r"AKIA[0-9A-Z]{16}", "AWS Access Key"),
         (r"-----BEGIN (RSA|DSA|EC) PRIVATE KEY-----", "Private Key"),
-        (r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}", "JWT Token"),
+        (
+            r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}",
+            "JWT Token",
+        ),
     ];
     for (i, line) in lines.iter().enumerate() {
         for (pat, desc) in &secret_patterns {
@@ -217,6 +220,25 @@ pub fn fix_file(
     }
 
     Ok((fixed, issues))
+}
+
+// ------------------------------------------------------------------------
+// Stubs for missing check commands
+// ------------------------------------------------------------------------
+
+pub fn license_check(_action: &crate::cli::commands::LicenseAction) -> Result<()> {
+    println!("License check (not yet implemented)");
+    Ok(())
+}
+
+pub fn deps_check(_action: &crate::cli::commands::DepsAction) -> Result<()> {
+    println!("Dependency check (not yet implemented)");
+    Ok(())
+}
+
+pub fn find_duplicates(_delete: bool, _move_to_trash: bool) -> Result<()> {
+    println!("Duplicate finder (not yet implemented)");
+    Ok(())
 }
 
 // ------------------------------------------------------------------------
