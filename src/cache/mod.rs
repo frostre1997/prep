@@ -78,15 +78,13 @@ fn clean_all_cache(dry_run: bool) -> Result<()> {
 fn clean_temp_files(dry_run: bool) -> Result<()> {
     let patterns = ["*.tmp", "*.log", "*.cache"];
     for pattern in patterns {
-        for entry in glob::glob(pattern)? {
-            if let Ok(path) = entry {
-                if dry_run {
-                    println!("Would remove: {}", path.display());
-                } else {
-                    if path.is_file() {
-                        fs::remove_file(&path)?;
-                        println!("Removed: {}", path.display());
-                    }
+        for path in glob::glob(pattern)?.flatten() {
+            if dry_run {
+                println!("Would remove: {}", path.display());
+            } else {
+                if path.is_file() {
+                    fs::remove_file(&path)?;
+                    println!("Removed: {}", path.display());
                 }
             }
         }
