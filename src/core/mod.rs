@@ -1,85 +1,264 @@
+// src/core/mod.rs
 use anyhow::Result;
+use colored::*;
+use ignore::WalkBuilder;
+use regex::Regex;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use rayon::prelude::*;
+use indicatif::{ProgressBar, ProgressStyle};
+use crate::checks::{CheckResult, run_checks_on_file, fix_file};
 
 pub fn audit(
-    _changed: bool,
-    _verbose: bool,
-    _exclude: Option<&str>,
-    _include: Option<&str>,
-    _follow_symlinks: bool,
-    _max_depth: Option<usize>,
+    changed: bool,
+    verbose: bool,
+    exclude: Option<&str>,
+    include: Option<&str>,
+    follow_symlinks: bool,
+    max_depth: Option<usize>,
     _since: Option<&str>,
     _until: Option<&str>,
-    _no_ignore: bool,
+    no_ignore: bool,
 ) -> Result<()> {
-    println!("Audit command (not yet fully implemented)");
+    let files = collect_files(changed, exclude, include, follow_symlinks, max_depth, no_ignore)?;
+
+    if files.is_empty() {
+        println!("No files to scan.");
+        return Ok(());
+    }
+
+    println!("Scanning {} files...", files.len());
+
+    let pb = ProgressBar::new(files.len() as u64);
+    pb.set_style(ProgressStyle::default_bar()
+        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})")
+        .progress_chars("#>-"));
+
+    let results: Vec<(PathBuf, Vec<CheckResult>)> = files
+        .par_iter()
+        .map(|path| {
+            let issues = run_checks_on_file(path);
+            pb.inc(1);
+            (path.clone(), issues)
+        })
+        .collect();
+
+    pb.finish_and_clear();
+
+    let mut total_errors = 0;
+    let mut total_warnings = 0;
+
+    for (path, issues) in results {
+        if issues.is_empty() {
+            continue;
+        }
+        println!("\n{}", path.display());
+        for issue in issues {
+            match issue.severity {
+                crate::checks::Severity::Error => {
+                    println!("  [ERROR] {}", issue.message.red());
+                    total_errors += 1;
+                }
+                crate::checks::Severity::Warning => {
+                    println!("  [WARN] {}", issue.message.yellow());
+                    total_warnings += 1;
+                }
+                crate::checks::Severity::Info => {
+                    if verbose {
+                        println!("  [INFO] {}", issue.message.cyan());
+                    }
+                }
+            }
+        }
+    }
+
+    println!("\nDone. Errors: {}, Warnings: {}", total_errors, total_warnings);
     Ok(())
 }
 
 pub fn fix(
-    _dry_run: bool,
-    _all: bool,
-    _trim: bool,
-    _eof: bool,
-    _crlf: bool,
-    _bom: bool,
+    dry_run: bool,
+    all: bool,
+    trim: bool,
+    eof: bool,
+    crlf: bool,
+    bom: bool,
     _interactive: bool,
-    _changed: bool,
+    changed: bool,
 ) -> Result<()> {
-    println!("Fix command (not yet fully implemented)");
+    let files = collect_files(changed, None, None, false, None, false)?;
+
+    if files.is_empty() {
+        println!("No files to fix.");
+        return Ok(());
+    }
+
+    println!("Fixing {} files...", files.len());
+
+    let mut fixed_files = 0;
+    for path in files {
+        let (fixed, issues) = fix_file(&path, dry_run, all, trim, eof, crlf, bom)?;
+        if fixed {
+            fixed_files += 1;
+            if !dry_run {
+                println!("[FIXED] {}", path.display());
+            } else {
+                println!("[DRY RUN] Would fix {}", path.display());
+                for issue in issues {
+                    println!("  - {}", issue.message);
+                }
+            }
+        }
+    }
+
+    if dry_run {
+        println!("\nDry run complete. Would fix {} file(s).", fixed_files);
+    } else {
+        println!("\nFixed {} file(s).", fixed_files);
+    }
+
     Ok(())
 }
 
 pub fn search(
-    _pattern: &str,
-    _case_insensitive: bool,
-    _count: bool,
-    _files_only: bool,
-    _line_numbers: bool,
-    _after: Option<usize>,
-    _before: Option<usize>,
-    _context: Option<usize>,
+    pattern: &str,
+    case_insensitive: bool,
+    count: bool,
+    files_only: bool,
+    line_numbers: bool,
+    after: Option<usize>,
+    before: Option<usize>,
+    context: Option<usize>,
     _full_context: bool,
     _replace: Option<&str>,
-    _changed: bool,
+    changed: bool,
 ) -> Result<()> {
-    println!("Search command (not yet fully implemented)");
-    Ok(())
-}
-
-pub fn manifest(_verify: bool, _out: Option<&str>) -> Result<()> {
-    println!("Manifest command (not yet fully implemented)");
-    Ok(())
-}
-
-pub fn ci_mode(_fail_on_warning: bool, _threshold: Option<usize>) -> Result<()> {
-    println!("CI mode (not yet fully implemented)");
-    Ok(())
-}
-
-pub fn repo_info(_detailed: bool) -> Result<()> {
-    println!("Repository info (not yet fully implemented)");
-    Ok(())
-}
-
-pub fn watch_files(_interval: Option<u64>, _fix: bool) -> Result<()> {
-    println!("Watch command (not yet fully implemented)");
-    Ok(())
-}
-
-pub fn trim_whitespace(_dry_run: bool) -> Result<()> {
-    println!("Trim command (not yet fully implemented)");
-    Ok(())
-}
-
-pub fn show_version(_check: bool) -> Result<()> {
-    println!("prep version 1.0.0");
-    if _check {
-        println!("Checking for updates... (not yet implemented)");
+    let files = collect_files(changed, None, None, false, None, false)?;
+    if files.is_empty() {
+        println!("No files to search.");
+        return Ok(());
     }
+
+    let re = if case_insensitive {
+        Regex::new(&format!("(?i){}", pattern))?
+    } else {
+        Regex::new(pattern)?
+    };
+
+    let mut total_matches = 0;
+
+    for path in files {
+        let content = fs::read_to_string(&path)?;
+        let lines: Vec<&str> = content.lines().collect();
+        let mut matches = Vec::new();
+
+        for (i, line) in lines.iter().enumerate() {
+            if re.is_match(line) {
+                matches.push((i + 1, line));
+            }
+        }
+
+        if matches.is_empty() {
+            continue;
+        }
+
+        if files_only {
+            println!("{}", path.display());
+            continue;
+        }
+
+        if count {
+            println!("{}: {}", path.display(), matches.len());
+            continue;
+        }
+
+        println!("{}", path.display());
+        for (line_num, line) in matches {
+            if line_numbers {
+                println!("  {}: {}", line_num, line);
+            } else {
+                println!("  {}", line);
+            }
+            total_matches += 1;
+        }
+    }
+
+    if !files_only && !count {
+        println!("\nTotal matches: {}", total_matches);
+    }
+
     Ok(())
 }
 
-pub fn show_examples() -> Result<()> {
-    println!("Examples:\n  prep audit\n  prep fix --dry-run\n  prep search 'TODO'\n  prep build < build.log\n  prep report --format html\n  prep hooks install");
-    Ok(())
+// ------------------------------------------------------------------------
+// Helper: collect files
+// ------------------------------------------------------------------------
+
+fn collect_files(
+    changed: bool,
+    exclude: Option<&str>,
+    include: Option<&str>,
+    follow_symlinks: bool,
+    max_depth: Option<usize>,
+    no_ignore: bool,
+) -> Result<Vec<PathBuf>> {
+    if changed {
+        return get_changed_files();
+    }
+
+    let mut builder = WalkBuilder::new(".");
+    if !no_ignore {
+        builder.add_custom_ignore_filename(".prepignore");
+        builder.git_ignore(true);
+        builder.git_global(true);
+        builder.git_exclude(true);
+    }
+    builder.follow_links(follow_symlinks);
+    if let Some(depth) = max_depth {
+        builder.max_depth(depth);
+    }
+
+    // Exclude/Include patterns (simplified: glob)
+    let exclude_glob = exclude.map(glob::Pattern::new).transpose()?;
+    let include_glob = include.map(glob::Pattern::new).transpose()?;
+
+    let mut files = Vec::new();
+    for entry in builder.build() {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_file() {
+            let path_str = path.to_string_lossy();
+            if let Some(excl) = &exclude_glob {
+                if excl.matches(&path_str) {
+                    continue;
+                }
+            }
+            if let Some(incl) = &include_glob {
+                if !incl.matches(&path_str) {
+                    continue;
+                }
+            }
+            // Skip binary files (simple check – we'll handle at check stage)
+            files.push(path.to_path_buf());
+        }
+    }
+
+    Ok(files)
+}
+
+fn get_changed_files() -> Result<Vec<PathBuf>> {
+    let output = std::process::Command::new("git")
+        .args(["diff", "--name-only", "HEAD~1"])
+        .output()?;
+    if !output.status.success() {
+        return Ok(Vec::new());
+    }
+    let stdout = String::from_utf8(output.stdout)?;
+    let files: Vec<PathBuf> = stdout
+        .lines()
+        .map(PathBuf::from)
+        .filter(|p| p.exists() && p.is_file())
+        .collect();
+    Ok(files)
 }
