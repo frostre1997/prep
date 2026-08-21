@@ -2,7 +2,7 @@ name: audit
 
 on:
   workflow_run:
-    workflows: ["Build"]
+    workflows: ["rust"]
     types:
       - completed
 
