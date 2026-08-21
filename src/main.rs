@@ -2,21 +2,21 @@
 // Version: 0.100.0
 // License: MIT
 
-mod cli;
-mod core;
-mod checks;
 mod build;
-mod report;
-mod git;
-mod config;
 mod cache;
+mod checks;
+mod cli;
+mod config;
+mod core;
+mod git;
 mod output;
-mod validate;
+mod report;
 mod utils;
+mod validate;
 
+use anyhow::Result;
 use clap::Parser;
 use cli::commands::Cli;
-use anyhow::Result;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();

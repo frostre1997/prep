@@ -31,7 +31,11 @@ pub fn history(clear: bool, verbose: bool) -> Result<()> {
                 let time = chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0)
                     .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
                     .unwrap_or_else(|| "unknown".to_string());
-                println!("{} - {}", path.file_name().unwrap_or_default().to_string_lossy(), time);
+                println!(
+                    "{} - {}",
+                    path.file_name().unwrap_or_default().to_string_lossy(),
+                    time
+                );
             }
         }
     }

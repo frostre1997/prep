@@ -1,5 +1,5 @@
-use clap::{Parser, Subcommand};
 use anyhow::Result;
+use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(name = "prep")]
@@ -381,121 +381,125 @@ impl Cli {
         match &self.command {
             // For brevity, we'll call stub functions for each command.
             // You can replace these with actual implementations later.
-            Commands::Audit { changed, verbose, exclude, include, follow_symlinks, max_depth, since, until, no_ignore } => {
-                crate::core::audit(
-                    *changed, *verbose,
-                    exclude.as_deref(),
-                    include.as_deref(),
-                    *follow_symlinks,
-                    *max_depth,
-                    since.as_deref(),
-                    until.as_deref(),
-                    *no_ignore,
-                )
-            }
-            Commands::Fix { dry_run, all, trim, eof, crlf, bom, interactive, changed } => {
-                crate::core::fix(
-                    *dry_run, *all, *trim, *eof, *crlf, *bom, *interactive, *changed,
-                )
-            }
-            Commands::Build { run, watch, tool, save } => {
-                crate::build::parse_build(*run, *watch, tool.as_deref(), *save)
-            }
-            Commands::Search { pattern, case_insensitive, count, files_only, line_numbers, after, before, context, full_context, replace, changed } => {
-                crate::core::search(
-                    pattern,
-                    *case_insensitive,
-                    *count,
-                    *files_only,
-                    *line_numbers,
-                    *after,
-                    *before,
-                    *context,
-                    *full_context,
-                    replace.as_deref(),
-                    *changed,
-                )
-            }
-            Commands::Manifest { verify, out } => {
-                crate::core::manifest(*verify, out.as_deref())
-            }
-            Commands::Report { format, output, open, all } => {
-                crate::report::generate_report(
-                    format.as_deref(),
-                    output.as_deref(),
-                    *open,
-                    *all,
-                )
-            }
-            Commands::Summary { verbose } => {
-                crate::report::summary(*verbose)
-            }
-            Commands::Stats { top } => {
-                crate::report::stats(*top)
-            }
-            Commands::Blame { author, since, short } => {
-                crate::git::blame(author.as_deref(), since.as_deref(), *short)
-            }
-            Commands::Diff { staged, uncommitted, base } => {
-                crate::git::diff(*staged, *uncommitted, base.as_deref())
-            }
-            Commands::History { clear, verbose } => {
-                crate::cache::history(*clear, *verbose)
-            }
-            Commands::Init { force } => {
-                crate::config::init_config(*force)
-            }
+            Commands::Audit {
+                changed,
+                verbose,
+                exclude,
+                include,
+                follow_symlinks,
+                max_depth,
+                since,
+                until,
+                no_ignore,
+            } => crate::core::audit(
+                *changed,
+                *verbose,
+                exclude.as_deref(),
+                include.as_deref(),
+                *follow_symlinks,
+                *max_depth,
+                since.as_deref(),
+                until.as_deref(),
+                *no_ignore,
+            ),
+            Commands::Fix {
+                dry_run,
+                all,
+                trim,
+                eof,
+                crlf,
+                bom,
+                interactive,
+                changed,
+            } => crate::core::fix(
+                *dry_run,
+                *all,
+                *trim,
+                *eof,
+                *crlf,
+                *bom,
+                *interactive,
+                *changed,
+            ),
+            Commands::Build {
+                run,
+                watch,
+                tool,
+                save,
+            } => crate::build::parse_build(*run, *watch, tool.as_deref(), *save),
+            Commands::Search {
+                pattern,
+                case_insensitive,
+                count,
+                files_only,
+                line_numbers,
+                after,
+                before,
+                context,
+                full_context,
+                replace,
+                changed,
+            } => crate::core::search(
+                pattern,
+                *case_insensitive,
+                *count,
+                *files_only,
+                *line_numbers,
+                *after,
+                *before,
+                *context,
+                *full_context,
+                replace.as_deref(),
+                *changed,
+            ),
+            Commands::Manifest { verify, out } => crate::core::manifest(*verify, out.as_deref()),
+            Commands::Report {
+                format,
+                output,
+                open,
+                all,
+            } => crate::report::generate_report(format.as_deref(), output.as_deref(), *open, *all),
+            Commands::Summary { verbose } => crate::report::summary(*verbose),
+            Commands::Stats { top } => crate::report::stats(*top),
+            Commands::Blame {
+                author,
+                since,
+                short,
+            } => crate::git::blame(author.as_deref(), since.as_deref(), *short),
+            Commands::Diff {
+                staged,
+                uncommitted,
+                base,
+            } => crate::git::diff(*staged, *uncommitted, base.as_deref()),
+            Commands::History { clear, verbose } => crate::cache::history(*clear, *verbose),
+            Commands::Init { force } => crate::config::init_config(*force),
             Commands::Config { show, edit, set } => {
                 crate::config::manage_config(*show, *edit, set.as_deref())
             }
-            Commands::Ignore { action } => {
-                crate::config::manage_ignore(action)
-            }
-            Commands::Hooks { action } => {
-                crate::git::manage_hooks(action)
-            }
-            Commands::Ci { fail_on_warning, threshold } => {
-                crate::core::ci_mode(*fail_on_warning, *threshold)
-            }
-            Commands::License { action } => {
-                crate::checks::license_check(action)
-            }
-            Commands::Deps { action } => {
-                crate::checks::deps_check(action)
-            }
-            Commands::Duplicates { delete, move_to_trash } => {
-                crate::checks::find_duplicates(*delete, *move_to_trash)
-            }
-            Commands::Clean { all, dry_run } => {
-                crate::cache::clean_cache(*all, *dry_run)
-            }
-            Commands::Info { detailed } => {
-                crate::core::repo_info(*detailed)
-            }
-            Commands::Watch { interval, fix } => {
-                crate::core::watch_files(*interval, *fix)
-            }
-            Commands::Compare { first, second } => {
-                crate::git::compare_commits(first, second)
-            }
+            Commands::Ignore { action } => crate::config::manage_ignore(action),
+            Commands::Hooks { action } => crate::git::manage_hooks(action),
+            Commands::Ci {
+                fail_on_warning,
+                threshold,
+            } => crate::core::ci_mode(*fail_on_warning, *threshold),
+            Commands::License { action } => crate::checks::license_check(action),
+            Commands::Deps { action } => crate::checks::deps_check(action),
+            Commands::Duplicates {
+                delete,
+                move_to_trash,
+            } => crate::checks::find_duplicates(*delete, *move_to_trash),
+            Commands::Clean { all, dry_run } => crate::cache::clean_cache(*all, *dry_run),
+            Commands::Info { detailed } => crate::core::repo_info(*detailed),
+            Commands::Watch { interval, fix } => crate::core::watch_files(*interval, *fix),
+            Commands::Compare { first, second } => crate::git::compare_commits(first, second),
             Commands::Export { format, output } => {
                 crate::report::export_issues(format.as_deref(), output.as_deref())
             }
-            Commands::Import { file } => {
-                crate::report::import_issues(file)
-            }
-            Commands::Benchmark { verbose } => {
-                crate::utils::benchmark(*verbose)
-            }
-            Commands::Trim { dry_run } => {
-                crate::core::trim_whitespace(*dry_run)
-            }
-            Commands::Version { check } => {
-                crate::core::show_version(*check)
-            }
-            Commands::Examples => {
-                crate::core::show_examples()
-            }
+            Commands::Import { file } => crate::report::import_issues(file),
+            Commands::Benchmark { verbose } => crate::utils::benchmark(*verbose),
+            Commands::Trim { dry_run } => crate::core::trim_whitespace(*dry_run),
+            Commands::Version { check } => crate::core::show_version(*check),
+            Commands::Examples => crate::core::show_examples(),
         }
     }
 }

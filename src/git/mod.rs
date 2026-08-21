@@ -52,9 +52,7 @@ pub fn diff(staged: bool, uncommitted: bool, base: Option<&str>) -> Result<()> {
 
 pub fn manage_hooks(action: &crate::cli::commands::HooksAction) -> Result<()> {
     match action {
-        crate::cli::commands::HooksAction::Install { force, all } => {
-            install_hook(*force, *all)
-        }
+        crate::cli::commands::HooksAction::Install { force, all } => install_hook(*force, *all),
         crate::cli::commands::HooksAction::Uninstall => uninstall_hook(),
         crate::cli::commands::HooksAction::Status => hook_status(),
         crate::cli::commands::HooksAction::Run { fix } => run_hook(*fix),
@@ -80,7 +78,8 @@ fn install_hook(force: bool, all: bool) -> Result<()> {
         .map(|p| p.display().to_string())
         .unwrap_or_else(|_| "prep".to_string());
 
-    let script = format!(r#"#!/bin/sh
+    let script = format!(
+        r#"#!/bin/sh
 # prep pre-commit hook
 # Using absolute path: {}
 
@@ -99,7 +98,9 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "prep checks passed."
-"#, prep_path, prep_path, prep_path);
+"#,
+        prep_path, prep_path, prep_path
+    );
 
     fs::write(&hook_path, script)?;
 
@@ -163,9 +164,7 @@ fn run_hook(fix: bool) -> Result<()> {
 }
 
 pub fn compare_commits(first: &str, second: &str) -> Result<()> {
-    let output = Command::new("git")
-        .args(["diff", first, second])
-        .output()?;
+    let output = Command::new("git").args(["diff", first, second]).output()?;
     let stdout = String::from_utf8_lossy(&output.stdout);
     println!("{}", stdout);
     Ok(())

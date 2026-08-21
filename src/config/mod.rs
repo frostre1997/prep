@@ -1,5 +1,5 @@
-use anyhow::Result;
 use crate::cli::commands::IgnoreAction;
+use anyhow::Result;
 use std::fs;
 use std::path::Path;
 
@@ -57,7 +57,9 @@ pub fn manage_config(show: bool, edit: bool, set: Option<&str>) -> Result<()> {
     if edit {
         if Path::new(config_path).exists() {
             let editor = std::env::var("EDITOR").unwrap_or_else(|_| "nano".to_string());
-            let status = std::process::Command::new(editor).arg(config_path).status()?;
+            let status = std::process::Command::new(editor)
+                .arg(config_path)
+                .status()?;
             if !status.success() {
                 println!("Editor exited with error.");
             }
@@ -131,7 +133,8 @@ pub fn manage_ignore(action: &IgnoreAction) -> Result<()> {
             }
         }
         IgnoreAction::Reset => {
-            let default_content = "# .prepignore\n*.log\n*.tmp\n*.cache\nnode_modules/\ntarget/\nbuild/\n";
+            let default_content =
+                "# .prepignore\n*.log\n*.tmp\n*.cache\nnode_modules/\ntarget/\nbuild/\n";
             fs::write(ignore_path, default_content)?;
             println!("Reset .prepignore to defaults.");
         }

@@ -46,7 +46,10 @@ fn run_and_parse_build(tool: Option<&str>) -> Result<()> {
         "maven" => ("mvn", vec!["compile"]),
         "cargo" => ("cargo", vec!["build"]),
         _ => {
-            eprintln!("Unsupported tool: {}. Use gradle, maven, or cargo.", tool_name);
+            eprintln!(
+                "Unsupported tool: {}. Use gradle, maven, or cargo.",
+                tool_name
+            );
             return Ok(());
         }
     };
@@ -72,7 +75,14 @@ pub struct BuildIssue {
     pub raw: String,
 }
 
-pub fn parse_build_output(lines: &[String]) -> (Vec<BuildIssue>, Vec<BuildIssue>, Option<String>, Option<String>) {
+pub fn parse_build_output(
+    lines: &[String],
+) -> (
+    Vec<BuildIssue>,
+    Vec<BuildIssue>,
+    Option<String>,
+    Option<String>,
+) {
     let mut errors = Vec::new();
     let mut warnings = Vec::new();
     let mut task_failure = None;
@@ -147,55 +157,106 @@ pub fn parse_build_output(lines: &[String]) -> (Vec<BuildIssue>, Vec<BuildIssue>
             if let Some(caps) = pat.captures(line) {
                 let groups: Vec<&str> = caps.iter().map(|m| m.unwrap().as_str()).collect();
                 let (file, line_num, col, msg) = if groups.len() == 5 {
-                    (Some(groups[1].to_string()), Some(groups[2].parse().unwrap_or(0)), Some(groups[3].parse().unwrap_or(0)), groups[4].to_string())
+                    (
+                        Some(groups[1].to_string()),
+                        Some(groups[2].parse().unwrap_or(0)),
+                        Some(groups[3].parse().unwrap_or(0)),
+                        groups[4].to_string(),
+                    )
                 } else if groups.len() == 4 {
-                    (Some(groups[1].to_string()), Some(groups[2].parse().unwrap_or(0)), None, groups[3].to_string())
+                    (
+                        Some(groups[1].to_string()),
+                        Some(groups[2].parse().unwrap_or(0)),
+                        None,
+                        groups[3].to_string(),
+                    )
                 } else {
                     (None, None, None, line.to_string())
                 };
                 let key = format!("err:{:?}:{:?}:{:?}:{}", file, line_num, col, msg);
                 if !captured.contains(&key) {
-                    errors.push(BuildIssue { file, line: line_num, col, message: msg, raw: line.to_string() });
+                    errors.push(BuildIssue {
+                        file,
+                        line: line_num,
+                        col,
+                        message: msg,
+                        raw: line.to_string(),
+                    });
                     captured.insert(key);
                 }
                 matched = true;
                 break;
             }
         }
-        if matched { continue; }
+        if matched {
+            continue;
+        }
 
         for pat in &warning_patterns {
             if let Some(caps) = pat.captures(line) {
                 let groups: Vec<&str> = caps.iter().map(|m| m.unwrap().as_str()).collect();
                 let (file, line_num, col, msg) = if groups.len() == 5 {
-                    (Some(groups[1].to_string()), Some(groups[2].parse().unwrap_or(0)), Some(groups[3].parse().unwrap_or(0)), groups[4].to_string())
+                    (
+                        Some(groups[1].to_string()),
+                        Some(groups[2].parse().unwrap_or(0)),
+                        Some(groups[3].parse().unwrap_or(0)),
+                        groups[4].to_string(),
+                    )
                 } else if groups.len() == 4 {
-                    (Some(groups[1].to_string()), Some(groups[2].parse().unwrap_or(0)), None, groups[3].to_string())
+                    (
+                        Some(groups[1].to_string()),
+                        Some(groups[2].parse().unwrap_or(0)),
+                        None,
+                        groups[3].to_string(),
+                    )
                 } else {
                     (None, None, None, line.to_string())
                 };
                 let key = format!("warn:{:?}:{:?}:{:?}:{}", file, line_num, col, msg);
                 if !captured.contains(&key) {
-                    warnings.push(BuildIssue { file, line: line_num, col, message: msg, raw: line.to_string() });
+                    warnings.push(BuildIssue {
+                        file,
+                        line: line_num,
+                        col,
+                        message: msg,
+                        raw: line.to_string(),
+                    });
                     captured.insert(key);
                 }
                 matched = true;
                 break;
             }
         }
-        if matched { continue; }
+        if matched {
+            continue;
+        }
 
         let lower = line.to_lowercase();
-        if (lower.contains("error") || lower.contains("exception")) && !line.starts_with("FAILURE:") && !line.starts_with("BUILD FAILED") {
+        if (lower.contains("error") || lower.contains("exception"))
+            && !line.starts_with("FAILURE:")
+            && !line.starts_with("BUILD FAILED")
+        {
             let key = format!("raw_err:{}", line);
             if !captured.contains(&key) {
-                errors.push(BuildIssue { file: None, line: None, col: None, message: line.to_string(), raw: line.to_string() });
+                errors.push(BuildIssue {
+                    file: None,
+                    line: None,
+                    col: None,
+                    message: line.to_string(),
+                    raw: line.to_string(),
+                });
                 captured.insert(key);
             }
         } else if lower.contains("warning") {
             let key = format!("raw_warn:{}", line);
             if !captured.contains(&key) {
-                warnings.push(BuildIssue { file: None, line: None, col: None, message: line.to_string(), raw: line.to_string() });
+                warnings.push(BuildIssue {
+                    file: None,
+                    line: None,
+                    col: None,
+                    message: line.to_string(),
+                    raw: line.to_string(),
+                });
                 captured.insert(key);
             }
         }
