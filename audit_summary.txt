@@ -1,0 +1,12 @@
+Scanning 18 files...
+
+./Cargo.toml
+  [WARN] No newline at end of file
+
+./src/core/mod.rs.bak
+  [WARN] No newline at end of file
+
+./LICENSE
+  [WARN] No newline at end of file
+
+Done. Errors: 0, Warnings: 3
