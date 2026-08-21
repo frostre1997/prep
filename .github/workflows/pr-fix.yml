@@ -1,0 +1,72 @@
+name: Create Fix PR on Build Failure
+
+on:
+  workflow_run:
+    workflows: ["Build"]
+    types:
+      - completed
+
+jobs:
+  create-fix-pr:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.head_branch == 'main'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Attempt automatic fix
+      id: fix_attempt
+      continue-on-error: true
+      run: |
+        cargo fix --allow-dirty --allow-staged || true
+        cargo fmt
+    - name: Build prep (for summary and report)
+      id: build_prep
+      continue-on-error: true
+      run: cargo build --release
+    - name: Generate audit summary and report
+      if: steps.build_prep.outcome == 'success'
+      run: |
+        target/release/prep audit --verbose > audit_summary.txt
+        target/release/prep report --format markdown --output report.md
+    - name: Prepare PR body
+      id: prepare_body
+      run: |
+        {
+          echo "## Repository Summary"
+          echo ""
+          if [ -f audit_summary.txt ]; then
+            cat audit_summary.txt
+          else
+            echo "Audit summary not available (build of prep failed)."
+          fi
+          echo ""
+          echo "## Issues Table"
+          echo ""
+          if [ -f report.md ]; then
+            cat report.md
+          else
+            echo "Report not available (build of prep failed)."
+          fi
+          echo ""
+          echo "## Attempted Fixes"
+          echo ""
+          if [ "${{ steps.fix_attempt.outcome }}" == "success" ]; then
+            echo "- Applied \`cargo fix\` and \`cargo fmt\` (if changes were made)."
+          else
+            echo "- Automatic fix attempt failed or produced no changes."
+          fi
+        } > pr_body.md
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "Auto-fix: apply cargo fix and rustfmt"
+        title: "Auto-fix: build failure"
+        body-path: pr_body.md
+        branch: auto-fix-build
+        base: main
+        labels: auto-pr, fix
