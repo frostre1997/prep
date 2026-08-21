@@ -1,4 +1,3 @@
-// src/checks/mod.rs
 use anyhow::Result;
 use regex::Regex;
 use std::fs;
@@ -17,10 +16,6 @@ pub struct CheckResult {
     pub severity: Severity,
     pub message: String,
 }
-
-// ------------------------------------------------------------------------
-// Run all checks on a file
-// ------------------------------------------------------------------------
 
 pub fn run_checks_on_file(path: &Path) -> Vec<CheckResult> {
     let mut results = Vec::new();
@@ -42,7 +37,6 @@ pub fn run_checks_on_file(path: &Path) -> Vec<CheckResult> {
 
     let lines: Vec<&str> = content.lines().collect();
 
-    // 1. Secrets
     let secret_patterns = [
         (r"AKIA[0-9A-Z]{16}", "AWS Access Key"),
         (r"-----BEGIN (RSA|DSA|EC) PRIVATE KEY-----", "Private Key"),
@@ -64,7 +58,6 @@ pub fn run_checks_on_file(path: &Path) -> Vec<CheckResult> {
         }
     }
 
-    // 2. Merge conflicts
     for (i, line) in lines.iter().enumerate() {
         if line.starts_with("<<<<<<< HEAD")
             || line.starts_with(">>>>>>>")
@@ -77,7 +70,6 @@ pub fn run_checks_on_file(path: &Path) -> Vec<CheckResult> {
         }
     }
 
-    // 3. Trailing whitespace
     for (i, line) in lines.iter().enumerate() {
         if line.ends_with(' ') || line.ends_with('\t') {
             results.push(CheckResult {
@@ -87,7 +79,6 @@ pub fn run_checks_on_file(path: &Path) -> Vec<CheckResult> {
         }
     }
 
-    // 4. Missing newline at EOF
     if !lines.is_empty() && !content.ends_with('\n') {
         results.push(CheckResult {
             severity: Severity::Warning,
@@ -95,7 +86,6 @@ pub fn run_checks_on_file(path: &Path) -> Vec<CheckResult> {
         });
     }
 
-    // 5. CRLF line endings
     for (i, line) in lines.iter().enumerate() {
         if line.contains('\r') {
             results.push(CheckResult {
@@ -105,7 +95,6 @@ pub fn run_checks_on_file(path: &Path) -> Vec<CheckResult> {
         }
     }
 
-    // 6. BOM (Byte Order Mark)
     if content.starts_with('\u{feff}') {
         results.push(CheckResult {
             severity: Severity::Info,
@@ -115,10 +104,6 @@ pub fn run_checks_on_file(path: &Path) -> Vec<CheckResult> {
 
     results
 }
-
-// ------------------------------------------------------------------------
-// Fix file
-// ------------------------------------------------------------------------
 
 pub fn fix_file(
     path: &Path,
@@ -139,13 +124,11 @@ pub fn fix_file(
     let content = fs::read_to_string(path)?;
     let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
 
-    // Default: fix trailing whitespace and EOF if not overriding
     let fix_trim = trim || !all;
     let fix_eof = eof || !all;
     let fix_crlf = crlf || all;
     let fix_bom = bom || all;
 
-    // 1. Trim trailing whitespace
     if fix_trim {
         let mut changed = false;
         for line in &mut lines {
@@ -163,22 +146,18 @@ pub fn fix_file(
         }
     }
 
-    // 2. Fix EOF newline
-    if fix_eof {
-        if !lines.is_empty() {
-            let last = lines.last().unwrap();
-            if !last.is_empty() {
-                lines.push("".to_string());
-                fixed = true;
-                issues.push(CheckResult {
-                    severity: Severity::Info,
-                    message: "Added missing newline at EOF".to_string(),
-                });
-            }
+    if fix_eof && !lines.is_empty() {
+        let last = lines.last().unwrap();
+        if !last.is_empty() {
+            lines.push("".to_string());
+            fixed = true;
+            issues.push(CheckResult {
+                severity: Severity::Info,
+                message: "Added missing newline at EOF".to_string(),
+            });
         }
     }
 
-    // 3. Fix CRLF -> LF
     if fix_crlf {
         let mut changed = false;
         for line in &mut lines {
@@ -196,7 +175,6 @@ pub fn fix_file(
         }
     }
 
-    // 4. Remove BOM
     if fix_bom {
         let mut content_bytes = fs::read(path)?;
         if content_bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
@@ -213,7 +191,6 @@ pub fn fix_file(
         }
     }
 
-    // Write the modified content (if any changes and not dry-run)
     if fixed && !dry_run {
         let new_content = lines.join("\n");
         fs::write(path, new_content)?;
@@ -221,10 +198,6 @@ pub fn fix_file(
 
     Ok((fixed, issues))
 }
-
-// ------------------------------------------------------------------------
-// Stubs for missing check commands
-// ------------------------------------------------------------------------
 
 pub fn license_check(_action: &crate::cli::commands::LicenseAction) -> Result<()> {
     println!("License check (not yet implemented)");
@@ -240,10 +213,6 @@ pub fn find_duplicates(_delete: bool, _move_to_trash: bool) -> Result<()> {
     println!("Duplicate finder (not yet implemented)");
     Ok(())
 }
-
-// ------------------------------------------------------------------------
-// Helper: check if file is binary (by looking for null bytes)
-// ------------------------------------------------------------------------
 
 pub fn is_binary(path: &Path) -> bool {
     if let Ok(mut file) = fs::File::open(path) {

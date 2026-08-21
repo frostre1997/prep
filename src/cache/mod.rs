@@ -1,5 +1,4 @@
 use anyhow::Result;
-
 use std::fs;
 use std::path::Path;
 use std::time::UNIX_EPOCH;
@@ -19,8 +18,7 @@ pub fn history(clear: bool, verbose: bool) -> Result<()> {
 
     let entries = fs::read_dir(CACHE_DIR)?;
     let mut count = 0;
-    for entry in entries {
-        let entry = entry?;
+    for entry in entries.flatten() {
         let path = entry.path();
         if path.is_file() {
             count += 1;
@@ -31,11 +29,7 @@ pub fn history(clear: bool, verbose: bool) -> Result<()> {
                 let time = chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0)
                     .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
                     .unwrap_or_else(|| "unknown".to_string());
-                println!(
-                    "{} - {}",
-                    path.file_name().unwrap_or_default().to_string_lossy(),
-                    time
-                );
+                println!("{} - {}", path.file_name().unwrap_or_default().to_string_lossy(), time);
             }
         }
     }
@@ -66,9 +60,7 @@ fn clear_cache() {
 fn clean_all_cache(dry_run: bool) -> Result<()> {
     if dry_run {
         if Path::new(CACHE_DIR).exists() {
-            let entries = fs::read_dir(CACHE_DIR)?;
-            for entry in entries {
-                let entry = entry?;
+            for entry in fs::read_dir(CACHE_DIR)?.flatten() {
                 println!("Would remove: {}", entry.path().display());
             }
         }
@@ -76,15 +68,13 @@ fn clean_all_cache(dry_run: bool) -> Result<()> {
     }
 
     clear_cache();
-    // Also clean other temp files
     clean_temp_files(false)
 }
 
 fn clean_temp_files(dry_run: bool) -> Result<()> {
     let patterns = ["*.tmp", "*.log", "*.cache"];
     for pattern in patterns {
-        let entries = glob::glob(pattern)?;
-        for entry in entries {
+        for entry in glob::glob(pattern)? {
             if let Ok(path) = entry {
                 if dry_run {
                     println!("Would remove: {}", path.display());

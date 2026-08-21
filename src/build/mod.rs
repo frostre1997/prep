@@ -23,7 +23,7 @@ pub fn parse_build(_run: bool, _watch: bool, _tool: Option<&str>, _save: bool) -
 
     let stdin = std::io::stdin();
     let reader = BufReader::new(stdin.lock());
-    let lines: Vec<String> = reader.lines().filter_map(Result::ok).collect();
+    let lines: Vec<String> = reader.lines().map_while(Result::ok).collect();
 
     let (errors, warnings, task_failure, status) = parse_build_output(&lines);
 

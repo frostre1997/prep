@@ -1,5 +1,7 @@
 // src/core/mod.rs
-use crate::checks::{fix_file, is_binary, run_checks_on_file, CheckResult};
+#![allow(clippy::too_many_arguments)]
+
+use crate::checks::{fix_file, run_checks_on_file, CheckResult, is_binary};
 use anyhow::Result;
 use colored::*;
 use ignore::WalkBuilder;
@@ -325,7 +327,7 @@ pub fn repo_info(detailed: bool) -> Result<()> {
     println!("  Top extensions:");
 
     let mut sorted: Vec<_> = languages.into_iter().collect();
-    sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    sorted.sort_by_key(|a| std::cmp::Reverse(a.1));
     for (ext, count) in sorted.iter().take(5) {
         println!("    .{}: {}", ext, count);
     }
@@ -344,8 +346,8 @@ pub fn repo_info(detailed: bool) -> Result<()> {
 }
 
 pub fn watch_files(interval: Option<u64>, fix: bool) -> Result<()> {
-    use std::thread;
     use std::time::Duration;
+    use std::thread;
 
     let interval = interval.unwrap_or(5);
     println!("Watching for changes (interval: {}s)...", interval);
@@ -414,10 +416,7 @@ pub fn show_version(check: bool) -> Result<()> {
     if check {
         println!("Checking for updates...");
         let output = std::process::Command::new("curl")
-            .args([
-                "-s",
-                "https://api.github.com/repos/frostre1997/prep/releases/latest",
-            ])
+            .args(["-s", "https://api.github.com/repos/frostre1997/prep/releases/latest"])
             .output();
         if let Ok(out) = output {
             let stdout = String::from_utf8_lossy(&out.stdout);
@@ -458,10 +457,6 @@ pub fn show_examples() -> Result<()> {
     println!("  prep version                      Show version");
     Ok(())
 }
-
-// ------------------------------------------------------------------------
-// Helper: collect files
-// ------------------------------------------------------------------------
 
 fn collect_files(
     changed: bool,
