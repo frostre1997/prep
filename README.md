@@ -69,42 +69,102 @@ Download the latest binary for your platform from the Releases page.
 
 - `prep info` - Show repository information.
 
-## Examples
-
-### Audit your repository
+# Example
 
 ```bash
 prep audit
 ```
 
-### Fix trailing whitespace and missing EOF newline
+To scan only files changed in the last commit:
+
+```bash
+prep audit -r
+```
+
+---
+
+## `prep fix` – Fix formatting problems automatically
+
+Removes trailing whitespace from all lines and adds a missing newline at the end of every file. Use `--dry-run` to preview changes.
 
 ```bash
 prep fix
 ```
 
-### Parse Gradle build output
+Preview only:
+
+```bash
+prep fix --dry-run
+```
+
+---
+
+## `prep build` – Parse build output (Gradle, Maven, Cargo)
+
+Pipes the output of your build tool into prep. It extracts compiler errors and warnings and prints them with file names and line numbers.
 
 ```bash
 ./gradlew assembleDebug 2>&1 | prep build
 ```
 
-### Search for TODO comments
+To have prep run the build for you:
+
+```bash
+prep build --run --tool gradle
+```
+
+---
+
+## `prep search "pattern"` – Find text with regex
+
+Works like grep -r but respects your .gitignore and .prepignore files. Shows file paths and line numbers.
 
 ```bash
 prep search "TODO"
 ```
 
-### Generate an HTML report
+Case‑insensitive search:
+
+```bash
+prep search -i "fixme"
+```
+
+Show only filenames:
+
+```bash
+prep search -l "error"
+```
+
+---
+
+## `prep report` – Generate an HTML report
+
+Runs a full audit and creates a visual HTML summary of all issues found. The report lists every error and warning with file paths.
 
 ```bash
 prep report --format html --output report.html
 ```
 
-### Install pre-commit hook
+Other formats: json, markdown, csv.
+
+```bash
+prep report --format json --output issues.json
+```
+
+---
+
+## `prep hooks install` – Automate checks before every commit
+
+Installs a Git pre‑commit hook that runs prep audit (and optionally prep fix) before each commit. Prevents secrets, conflicts, and formatting issues from entering the repository.
 
 ```bash
 prep hooks install
+```
+
+To remove the hook:
+
+```bash
+prep hooks uninstall
 ```
 
 ## Configuration
