@@ -65,7 +65,7 @@ Download the latest binary for your platform from the Releases page.
 
 - `prep hooks install` - Install a pre-commit hook.
 
-- ``prep blame` - Show git blame for each issue.
+- `prep blame` - Show git blame for each issue.
 
 - `prep info` - Show repository information.
 
